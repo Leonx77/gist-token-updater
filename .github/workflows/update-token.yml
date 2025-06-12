@@ -1,0 +1,43 @@
+name: Update Gist Token Daily
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Setiap hari jam 00:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Jalankan Python untuk update token
+        env:
+          GIST_ID: fb003a5ccbe27fc369ea8bf756fb6c0f
+          GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}
+        run: |
+          python3 <<EOF
+          import requests, random, string, os
+
+          token = os.environ["GITHUB_TOKEN"]
+          gist_id = os.environ["GIST_ID"]
+          url = f"https://api.github.com/gists/{gist_id}"
+
+          # Buat token acak baru (32 karakter)
+          new_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json"
+          }
+
+          data = {
+              "files": {
+                  "token.txt": {
+                      "content": new_token
+                  }
+              }
+          }
+
+          r = requests.patch(url, headers=headers, json=data)
+          print("Status:", r.status_code)
+          print("New token:", new_token)
+          EOF
